@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
-sqlite3 *db;
+sqlite3 *db; /* database ptr */
 
 int test_callback(void *ptr, int nb_col, char **col_values, char **col_names){
   for(int i = 0; i < nb_col; i++){
@@ -32,7 +32,7 @@ int main(){
 
   srand(time(NULL));
 
-  if(sqlite3_open("rpg.db", &db) == SQLITE_OK){
+  if(sqlite3_open("./src/rpg.db", &db) == SQLITE_OK){
     printf("db opened ready to be queried\n");
 
     generate_account(5);

@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -g
-LIBS = -lglfw -lm -lGL -lXxf86vm -lXrandr -lXi
+LIBS = -lglfw3 -lm -lGL -lXxf86vm -lXrandr -lXi
 
 INCLUDE_PATH := ./include/
 LIB_PATH := ./lib/
@@ -23,5 +23,9 @@ dir:
 %.o : ./src/%.c
 	$(CC) -c $< -o ./build/$@ -I $(INCLUDE_PATH) 
 
+## TO BE REMOVED
+testing:
+	$(CC) src/rpg.c -o test -I ./include -L ./lib -lsqlite3
+
 clean :
-	rm -rf ./build rpg
+	rm -rf ./build rpg test
