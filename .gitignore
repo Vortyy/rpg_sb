@@ -1,2 +1,4 @@
 ./lib
 ./include
+
+./src/sqlite2.c
