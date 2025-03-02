@@ -1,7 +1,13 @@
+// Entity rendering (via Batch) --> first thing to do
+// Game Loop (rpg side view)
+// think about entry point (how, some JS will be required :()
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 // Rendering headers
 #include <GLFW/glfw3.h>
 #include <GLES3/gl3.h>
-#include <SDL/SDL.h>
 #include <emscripten.h>
 #include <emscripten/console.h>
 
@@ -15,24 +21,33 @@
 const char *vertex_src =
   "#version 300 es\n"
   "layout (location = 0) in vec3 aPos;\n"
+  "layout (location = 1) in vec2 aTexCoord;\n"
+  "out vec2 TexCoord;\n"
   "void main()\n"
   "{\n"
-  "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+  "   TexCoord = aTexCoord;\n"
+  "   gl_Position = vec4(aPos, 1.0);\n"
   "}\0";
 
 const char *frag_src =
   "#version 300 es\n"
   "precision mediump float;"
   "out vec4 FragColor;\n"
+  "in vec2 TexCoord;\n"
+  "uniform sampler2D image;"
   "void main()\n"
   "{\n"
-    "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "FragColor = texture(image, TexCoord);\n"
   "}\0";
 
 float vertices[] = {
+  // position        //texture
   -0.5f, -0.5f, 0.0f,
-  0.5f, -0.5f, 0.0f,
-  0.0f, 0.5f, 0.0f
+  0.0f, 0.5f, 0.0f,
+  0.5f, -.5f, 0.0f,
+  0.0f, 0.0f,
+  0.5f, 1.0f,
+  1.0f, 0.0f
 };
 
 static unsigned load_shader(int type, const char *src){
@@ -51,15 +66,27 @@ static unsigned load_shader(int type, const char *src){
     emscripten_console_log(buffer);
   }
 
-  emscripten_console_log("compilation shader succeed");
-
   return shader_id;
+}
+
+static void gen_bind_texture(unsigned int text, unsigned char *data, int width, int height){
+  glGenTextures(1, &text);
+
+  glBindTexture(GL_TEXTURE_2D, text);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 }
   
 GLFWwindow *window = NULL;
 float clear_color[3] = {0.5f, 1.0f, 0.2f};
-unsigned int shader_prog = -1;
+unsigned int shader_program = -1;
 unsigned int VAO = -1;
+unsigned int texture = -1;
 
 extern void randomize_bg_color();
 
@@ -74,8 +101,10 @@ EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
 void _loop(){
   glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
+  
+  glBindTexture(GL_TEXTURE_2D, texture);
 
-  glUseProgram(shader_prog);
+  glUseProgram(shader_program);
   glBindVertexArray(VAO);
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -98,18 +127,31 @@ int main(){
   unsigned vertex_shader = load_shader(GL_VERTEX_SHADER, vertex_src);
   unsigned frag_shader = load_shader(GL_FRAGMENT_SHADER, frag_src);
 
-  shader_prog = glCreateProgram();
-  glAttachShader(shader_prog, vertex_shader);
-  glAttachShader(shader_prog, frag_shader);
-  glLinkProgram(shader_prog);
+  shader_program = glCreateProgram();
+  glAttachShader(shader_program, vertex_shader);
+  glAttachShader(shader_program, frag_shader);
+  glLinkProgram(shader_program);
 
   char str[512];
   int success;
-  glGetProgramiv(shader_prog, GL_LINK_STATUS, &success);
+  glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
   if(!success){
-    glGetProgramInfoLog(shader_prog, 512, NULL, str);
+    glGetProgramInfoLog(shader_program, 512, NULL, str);
     emscripten_console_log(str);
   }
+
+  int width, height, nr_channels;
+  unsigned char *data = stbi_load("./src/wall.jpg", &width, &height, &nr_channels, 0);
+  if(!data)
+    emscripten_console_log("error while loading");
+  else
+  {
+    char buffer[100];
+    sprintf(buffer, "image loaded : (%d, %d)", width, height);
+    emscripten_console_log(buffer);
+  }
+  gen_bind_texture(texture, data, width, height);
+  stbi_image_free(data);
 
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
@@ -117,10 +159,17 @@ int main(){
   unsigned int VBO;
   glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+  char buff[100];
+  sprintf(buff, "sizeof vertices: %lu", sizeof(vertices));
+  emscripten_console_log(buff);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
+
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(3*sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   emscripten_set_main_loop(_loop, -1, 1);
 

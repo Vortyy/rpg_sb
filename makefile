@@ -28,8 +28,8 @@ testing:
 	$(CC) src/rpg.c -o test -I ./include -L ./lib -lsqlite3
 
 wasm:
-	emcc src/renderWasm.c -o src/index.js -sUSE_GLFW=3 -sFULL_ES3 \
-		-sEXPORTED_RUNTIME_METHODS=ccall
+	emcc src/renderWasm.c -I./src/ -o src/index.js -sUSE_GLFW=3 -sFULL_ES3 \
+		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file ./src/wall.jpg
 
 clean :
 	rm -rf ./build rpg test
