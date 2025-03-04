@@ -1,15 +1,14 @@
 // Entity rendering (via Batch) --> first thing to do
 // Game Loop (rpg side view)
 // think about entry point (how, some JS will be required :()
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 // Rendering headers
 #include <GLFW/glfw3.h>
 #include <GLES3/gl3.h>
-#include <emscripten.h>
-#include <emscripten/console.h>
+//#include <emscripten.h>
+//#include <emscripten/console.h>
 
 // Processing headers
 #include <time.h>
@@ -34,20 +33,17 @@ const char *frag_src =
   "precision mediump float;"
   "out vec4 FragColor;\n"
   "in vec2 TexCoord;\n"
-  "uniform sampler2D image;"
+  "uniform sampler2D img;\n"
   "void main()\n"
   "{\n"
-    "FragColor = texture(image, TexCoord);\n"
+    "FragColor = texture(img, TexCoord);\n"
   "}\0";
 
-float vertices[] = {
+float vertices[15] = {
   // position        //texture
-  -0.5f, -0.5f, 0.0f,
-  0.0f, 0.5f, 0.0f,
-  0.5f, -.5f, 0.0f,
-  0.0f, 0.0f,
-  0.5f, 1.0f,
-  1.0f, 0.0f
+  -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+  0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
 };
 
 static unsigned load_shader(int type, const char *src){
@@ -63,33 +59,25 @@ static unsigned load_shader(int type, const char *src){
   if(!success){
     glGetShaderInfoLog(shader_id, 512, NULL, info_log);
     sprintf(buffer, "error shader compilation: %s", info_log);
-    emscripten_console_log(buffer);
+    //  emscripten_console_log(buffer);
   }
 
   return shader_id;
 }
 
-static void gen_bind_texture(unsigned int text, unsigned char *data, int width, int height){
-  glGenTextures(1, &text);
+void gen_bind_texture(unsigned int text, unsigned char *data, int width, int height){
 
-  glBindTexture(GL_TEXTURE_2D, text);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 }
   
 GLFWwindow *window = NULL;
 float clear_color[3] = {0.5f, 1.0f, 0.2f};
-unsigned int shader_program = -1;
-unsigned int VAO = -1;
-unsigned int texture = -1;
+unsigned int shader_program;
+unsigned int VAO;
+unsigned int TEXT;
 
 extern void randomize_bg_color();
 
+/*
 EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
   float v;
   for(int i = 0; i < 3; i++){
@@ -97,12 +85,13 @@ EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
     clear_color[i] = v;
   }
 }
+*/
 
 void _loop(){
   glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
   
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, TEXT);
 
   glUseProgram(shader_program);
   glBindVertexArray(VAO);
@@ -117,7 +106,7 @@ int main(){
 
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
   window = glfwCreateWindow(800, 600, "test WasmGL", NULL, NULL);
 
@@ -137,41 +126,59 @@ int main(){
   glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
   if(!success){
     glGetProgramInfoLog(shader_program, 512, NULL, str);
-    emscripten_console_log(str);
+    //emscripten_console_log(str);
   }
-
-  int width, height, nr_channels;
-  unsigned char *data = stbi_load("./src/wall.jpg", &width, &height, &nr_channels, 0);
-  if(!data)
-    emscripten_console_log("error while loading");
-  else
-  {
-    char buffer[100];
-    sprintf(buffer, "image loaded : (%d, %d)", width, height);
-    emscripten_console_log(buffer);
-  }
-  gen_bind_texture(texture, data, width, height);
-  stbi_image_free(data);
-
+  
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
 
   unsigned int VBO;
   glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  char buff[100];
-  sprintf(buff, "sizeof vertices: %lu", sizeof(vertices));
-  emscripten_console_log(buff);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(3*sizeof(float)));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  emscripten_set_main_loop(_loop, -1, 1);
+  //TEXTURE
+  glActiveTexture(GL_TEXTURE0);
+
+  int width, height, nr_channels;
+  unsigned char *data = stbi_load("src/wall.jpg", &width, &height, &nr_channels, 0);
+  if(!data)
+    //emscripten_console_log("error while loading");
+    printf("error");
+  else
+  {
+    char buffer[100];
+    sprintf(buffer, "image loaded : (%d, %d, %d)", width, height, nr_channels);
+    printf("%s\n", buffer);
+    //emscripten_console_log(buffer);
+  }
+
+  glGenTextures(1, &TEXT);
+  
+  glBindTexture(GL_TEXTURE_2D, TEXT);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  unsigned int textUni = glGetUniformLocation(shader_program, "img");
+  glUniform1i(textUni, 0);
+  
+  //emscripten_set_main_loop(_loop, -1, 1);
+
+  while(!glfwWindowShouldClose(window)){
+    _loop();
+  }
 
   glfwTerminate();
   return 0;
