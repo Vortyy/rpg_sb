@@ -24,12 +24,13 @@ dir:
 	$(CC) -c $< -o ./build/$@ -I $(INCLUDE_PATH)
 
 ## TO BE REMOVED
-testing:
+testing_old:
 	$(CC) src/rpg.c -o test -I ./include -L ./lib -lsqlite3
 
 wasm:
-	emcc src/renderWasm.c -I./src/ -o src/index.js -sSTB_IMAGE -sUSE_GLFW=3 -sFULL_ES3 \
-		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file ./src/wall.jpg --use-preload-plugins
+	emcc src/renderWasm.c -I./src/ -o src/index.js -sUSE_GLFW=3 -sFULL_ES3 \
+		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file ./src/wall.jpg --use-preload-plugins\
+		-D WASM
 
 testing:
 	gcc src/renderWasm.c -I./include/ -o game -L./lib/ $(LIBS)

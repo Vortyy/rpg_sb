@@ -7,8 +7,11 @@
 // Rendering headers
 #include <GLFW/glfw3.h>
 #include <GLES3/gl3.h>
-//#include <emscripten.h>
-//#include <emscripten/console.h>
+
+#ifdef WASM
+#include <emscripten.h>
+#include <emscripten/console.h>
+#endif
 
 // Processing headers
 #include <time.h>
@@ -42,9 +45,17 @@ const char *frag_src =
 float vertices[15] = {
   // position        //texture
   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-  0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  0.0f, 0.5f, 0.0f, 0.5f, 1.0f,
   0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
 };
+
+static void _log(char *str){
+  #ifdef WASM
+  emscripten_console_log(str);
+  #else
+  printf("%s\n", str);
+  #endif
+}
 
 static unsigned load_shader(int type, const char *src){
   unsigned shader_id = glCreateShader(type);
@@ -59,25 +70,21 @@ static unsigned load_shader(int type, const char *src){
   if(!success){
     glGetShaderInfoLog(shader_id, 512, NULL, info_log);
     sprintf(buffer, "error shader compilation: %s", info_log);
-    //  emscripten_console_log(buffer);
+    _log(buffer);
   }
 
   return shader_id;
 }
 
-void gen_bind_texture(unsigned int text, unsigned char *data, int width, int height){
-
-}
-  
 GLFWwindow *window = NULL;
 float clear_color[3] = {0.5f, 1.0f, 0.2f};
 unsigned int shader_program;
 unsigned int VAO;
 unsigned int TEXT;
 
+#ifdef WASM
 extern void randomize_bg_color();
 
-/*
 EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
   float v;
   for(int i = 0; i < 3; i++){
@@ -85,7 +92,7 @@ EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
     clear_color[i] = v;
   }
 }
-*/
+#endif
 
 void _loop(){
   glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
@@ -126,7 +133,7 @@ int main(){
   glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
   if(!success){
     glGetProgramInfoLog(shader_program, 512, NULL, str);
-    //emscripten_console_log(str);
+    _log(str);
   }
   
   glGenVertexArrays(1, &VAO);
@@ -149,14 +156,12 @@ int main(){
   int width, height, nr_channels;
   unsigned char *data = stbi_load("src/wall.jpg", &width, &height, &nr_channels, 0);
   if(!data)
-    //emscripten_console_log("error while loading");
-    printf("error");
+    _log("error while loading texture");
   else
   {
     char buffer[100];
     sprintf(buffer, "image loaded : (%d, %d, %d)", width, height, nr_channels);
-    printf("%s\n", buffer);
-    //emscripten_console_log(buffer);
+    _log(buffer);
   }
 
   glGenTextures(1, &TEXT);
@@ -165,20 +170,21 @@ int main(){
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-  glGenerateMipmap(GL_TEXTURE_2D);
 
   unsigned int textUni = glGetUniformLocation(shader_program, "img");
   glUniform1i(textUni, 0);
-  
-  //emscripten_set_main_loop(_loop, -1, 1);
 
+  #ifdef WASM
+  emscripten_set_main_loop(_loop, -1, 1);
+  #else
   while(!glfwWindowShouldClose(window)){
     _loop();
   }
+  #endif
 
   glfwTerminate();
   return 0;
