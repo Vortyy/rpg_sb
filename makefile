@@ -27,13 +27,13 @@ dir:
 testing_old:
 	$(CC) src/rpg.c -o test -I ./include -L ./lib -lsqlite3
 
-wasm:
-	emcc src/renderWasm.c -I./src/ -o src/index.js -sUSE_GLFW=3 -sFULL_ES3 \
-		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file ./src/wall.jpg --use-preload-plugins\
-		-D WASM
+## WARNING: hand included stb_image.h to /usr/share/emscripten/cache/sysroot/include
+wasm: dir
+	emcc src/renderWasm.c src/renderer.c -o build/index.js -sUSE_GLFW=3 -sFULL_ES3 \
+		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file img/wall.jpg --use-preload-plugins
 
 testing:
-	gcc src/renderWasm.c -I./include/ -o game -L./lib/ $(LIBS)
+	gcc src/renderWasm.c src/renderer.c -o game $(LIBS)
 
 clean :
-	rm -rf ./build rpg test
+	rm -rf ./build rpg test src/index.*
