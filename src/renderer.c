@@ -46,12 +46,12 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
   GLuint vbo;
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, vertex_capacity * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertex_capacity * VERTEX_SIZE * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * VERTEX_SIZE, (void*) 0);
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERTEX_SIZE * sizeof(float), (void*)(3 * sizeof(float)));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * VERTEX_SIZE, (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
   return (Renderer){
@@ -60,9 +60,9 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
     .vbo = vbo,
     .vertex_count = 0,
     .vertex_capacity = vertex_capacity,
-    .vertices = malloc(sizeof(Vertex) * vertex_capacity),
+    .vertices = (float *) malloc(sizeof(float) * VERTEX_SIZE * vertex_capacity),
     .texture = 0,
-    .mvp = 0,
+    .mvp = NULL
   };
 }
 
@@ -78,7 +78,7 @@ void flushVertices(Renderer *renderer){
   glUniformMatrix4fv(glGetUniformLocation(renderer->shaderProgr, "mvp"), 1, GL_FALSE, renderer->mvp);
 
   glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * renderer->vertex_count, renderer->vertices);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * VERTEX_SIZE * renderer->vertex_count, renderer->vertices);
 
   glBindVertexArray(renderer->vao);
   glDrawArrays(GL_TRIANGLES, 0, renderer->vertex_count);
@@ -86,11 +86,13 @@ void flushVertices(Renderer *renderer){
   renderer->vertex_count = 0;
 }
 
-void pushVertex(Renderer *renderer, Vertex vertex){
+void pushVertex(Renderer *renderer, float vertex[VERTEX_SIZE]){
   if(renderer->vertex_count == renderer->vertex_capacity)
     flushVertices(renderer);
 
-  *(renderer->vertices + renderer->vertex_count) = vertex;
+  float * vAddr = renderer->vertices + (renderer->vertex_count * VERTEX_SIZE);
+  memcpy(vAddr, vertex, sizeof(float) * VERTEX_SIZE);
+  
   renderer->vertex_count++;
 }
 
@@ -101,9 +103,11 @@ void setTexture(Renderer *renderer, GLuint textureId){
   }
 }
 
-void setMatrix(Renderer *renderer, const char *fctName, const char *uniformName, float *values){
-   flushVertices(renderer);
-   renderer->mvp = values;
+void setMvp(Renderer *renderer, float *values){
+  if(renderer->mvp == NULL || memcmp(values, renderer->mvp, sizeof(float) * 16) != 0){
+    flushVertices(renderer);
+    renderer->mvp = values;
+  }
 }
 
 // --------- texture loading ------------//

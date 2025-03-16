@@ -68,18 +68,26 @@ EMSCRIPTEN_KEEPALIVE void randomize_bg_color(){
 #endif
 
 void printMatrix(char row, char col, float *values){
+  int j = 0;
   for(int i = 0; i < (row * col); i++){
-    if(i % col == 0)
+    if(i != 0 && i % col == 0){
+      j++;
       printf("\n");
-    printf("%.3f ", values[i]);
+    }
+    printf("%.3f ", values[i%col * 4 + j]);
   }
-  printf("\n");
 }
 
 void drawTriangle(Renderer *renderer){
-  pushVertex(renderer, (Vertex){.buffer={0.0f, 0.0f, 0.0f, 0.0f, 0.0f}});
-  pushVertex(renderer, (Vertex){.buffer={0.0f, 100.0f, 0.0f, 0.0f, 0.0f}});
-  pushVertex(renderer, (Vertex){.buffer={100.0f, 0.0f, 0.0f, 0.0f, 0.0f}});
+  pushVertex(renderer, (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){0.0f, 100.0f, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){100.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+}
+
+void drawTriangle2(Renderer *renderer){
+  pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){800.0f, 500.0f, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){700.0f, 600.0f, 0.0f, 0.0f, 0.0f});
 }
 
 void _loop(){
@@ -89,14 +97,16 @@ void _loop(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); /* wireframe mode */
 
   drawTriangle(&renderer);
+  drawTriangle2(&renderer);
   flushVertices(&renderer);
 
   glfwSwapBuffers(window);
   glfwPollEvents();
 }
 
-void getOrthMatrix(float *m, float left, float right, float bottom, float top, float znear, float zfar){
-  //printMatrix(4,4, m);
+float * genOrthMatrix(float left, float right, float bottom, float top, float znear, float zfar){
+
+  float *m = (float *) calloc(16, sizeof(float));
   
   float rl = 1.0f / (right - left);
   float tb = 1.0f / (top - bottom);
@@ -112,7 +122,7 @@ void getOrthMatrix(float *m, float left, float right, float bottom, float top, f
   m[4 * 3 + 2] = (zfar + znear) * fn;
   m[4 * 3 + 3] = 1.0f;
 
-  //printMatrix(4,4, m);
+  return m;
 }
 
 int main(){
@@ -139,13 +149,12 @@ int main(){
   GLuint wallTexture;
   createTexture("img/wall.jpg", &wallTexture);
 
-  float matrix[16] = {0};
-  getOrthMatrix(matrix, 0, 800.f, 600.f, 0, -1.0f, 1.0f);
+  float *matrix = genOrthMatrix(0, 800.f, 600.f, 0, -1.0f, 1.0f);
   
   renderer = createRenderer(vertex_src, frag_src, 300);
 
   setTexture(&renderer, wallTexture);
-  setMatrix(&renderer, "testing", "mvp", matrix);
+  setMvp(&renderer, matrix);
   
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(_loop, -1, 1);
