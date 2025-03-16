@@ -1,5 +1,5 @@
-#ifndef TEST_H
-#define TEST_H
+#ifndef RENDERER_H
+#define RENDERER_H
 
 #include <GLES3/gl3.h>
 #include <stdlib.h>
@@ -34,4 +34,4 @@ void flushVertices(Renderer *renderer);
 
 void createTexture(const char *src, GLuint *texture);
 
-#endif
+#endif //RENDERER_H

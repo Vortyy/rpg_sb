@@ -2,6 +2,8 @@
 // Game Loop (rpg side view)
 // think about entry point (how, some JS will be required :())
 
+#include "renderer.h"
+
 // Processing headers
 #include <time.h>
 #include <stdlib.h>
@@ -22,8 +24,6 @@ void logInfo(char *str){
   printf("%s\n", str);
 }
 #endif
-
-#include "renderer.h"
 
 #define frand() ((float) rand() / (float) (RAND_MAX))
 
@@ -46,7 +46,7 @@ const char *frag_src =
   "uniform sampler2D img;\n"
   "void main()\n"
   "{\n"
-    "FragColor = texture(img, TexCoord);\n"
+  "FragColor = texture(img, TexCoord);\n"
   "}\0";
 
 static void _log(char *str){
@@ -79,11 +79,18 @@ void drawTriangle(Renderer *renderer){
   pushVertex(renderer, (Vertex){.buffer={0.5f, -0.5f, 0.0f, 1.0f, 0.0f}});
 }
 
+void drawTriangle2(Renderer *renderer){
+  pushVertex(renderer, (Vertex){.buffer={-1.0f, -1.0f, 0.0f, 0.0f, 0.0f}});
+  pushVertex(renderer, (Vertex){.buffer={0.0f, -0.7f, 0.0f, 0.5f, 1.0f}});
+  pushVertex(renderer, (Vertex){.buffer={0.0f, -1.0f, 0.0f, 1.0f, 0.0f}});
+}
+
 void _loop(){
   glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
   drawTriangle(&renderer);
+  drawTriangle2(&renderer);
   flushVertices(&renderer);
 
   glfwSwapBuffers(window);
@@ -105,7 +112,7 @@ int main(){
   GLuint wallTexture;
   createTexture("img/wall.jpg", &wallTexture);
   
-  renderer = createRenderer(vertex_src, frag_src, 3000);
+  renderer = createRenderer(vertex_src, frag_src, 300);
 
   setTexture(&renderer, wallTexture);
 

@@ -46,9 +46,9 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
   GLuint vbo;
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_capacity) * VERTEX_SIZE * sizeof(float), (void *) 0, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertex_capacity * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, VERTEX_SIZE * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0);
   glEnableVertexAttribArray(0);
 
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERTEX_SIZE * sizeof(float), (void*)(3 * sizeof(float)));
@@ -60,7 +60,7 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
     .vbo = vbo,
     .vertex_count = 0,
     .vertex_capacity = vertex_capacity,
-    .vertices = malloc(sizeof(float) * VERTEX_SIZE * vertex_capacity),
+    .vertices = malloc(sizeof(Vertex) * vertex_capacity),
     .texture = 0
   };
 }
@@ -75,7 +75,7 @@ void flushVertices(Renderer *renderer){
   glBindTexture(GL_TEXTURE_2D, renderer->texture);
 
   glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * VERTEX_SIZE * renderer->vertex_count, renderer->vertices);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * renderer->vertex_count, renderer->vertices);
 
   glBindVertexArray(renderer->vao);
   glDrawArrays(GL_TRIANGLES, 0, renderer->vertex_count);
