@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -g
-LIBS = -lglfw3 -lm -lGL -lXxf86vm -lXrandr -lXi
+LIBS = -lglfw3 -lm -lGL -lXxf86vm -lXrandr -lXi -lX11
 
 INCLUDE_PATH := ./include/
 LIB_PATH := ./lib/
@@ -29,11 +29,12 @@ testing_old:
 
 ## WARNING: hand included stb_image.h to /usr/share/emscripten/cache/sysroot/include
 wasm: dir
-	emcc src/renderWasm.c src/renderer.c -o build/index.js -sUSE_GLFW=3 -sFULL_ES3 \
+	emcc src/renderWasm.c src/renderer.c src/glad.c -I./include/ -o build/index.js -sUSE_GLFW=3 -sFULL_ES3 \
 		-sEXPORTED_RUNTIME_METHODS=ccall --preload-file img/wall.jpg --use-preload-plugins
+	cp src/test.html build/
 
-testing:
-	gcc src/renderWasm.c src/renderer.c -o game $(LIBS)
+testing: dir
+	gcc -Wall src/renderWasm.c src/renderer.c src/glad.c -I./include/ -o build/game $(LIBS)
 
 clean :
 	rm -rf ./build rpg test src/index.*

@@ -61,7 +61,8 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
     .vertex_count = 0,
     .vertex_capacity = vertex_capacity,
     .vertices = malloc(sizeof(Vertex) * vertex_capacity),
-    .texture = 0
+    .texture = 0,
+    .mvp = 0,
   };
 }
 
@@ -73,6 +74,8 @@ void flushVertices(Renderer *renderer){
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, renderer->texture);
+
+  glUniformMatrix4fv(glGetUniformLocation(renderer->shaderProgr, "mvp"), 1, GL_FALSE, renderer->mvp);
 
   glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * renderer->vertex_count, renderer->vertices);
@@ -96,6 +99,11 @@ void setTexture(Renderer *renderer, GLuint textureId){
     flushVertices(renderer);
     renderer->texture = textureId;
   }
+}
+
+void setMatrix(Renderer *renderer, const char *fctName, const char *uniformName, float *values){
+   flushVertices(renderer);
+   renderer->mvp = values;
 }
 
 // --------- texture loading ------------//
