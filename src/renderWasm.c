@@ -2,8 +2,6 @@
 // Game Loop (rpg side view)
 // think about entry point (how, some JS will be required :())
 
-#include "renderer.h"
-
 // Processing headers
 #include <time.h>
 #include <stdlib.h>
@@ -12,6 +10,7 @@
 // Rendering headers
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include "renderer.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -154,7 +153,7 @@ int main(){
   renderer = createRenderer(vertex_src, frag_src, 300);
 
   setTexture(&renderer, wallTexture);
-  setMvp(&renderer, matrix);
+  setMatrix(&renderer, "mvp", matrix);
   
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(_loop, -1, 1);

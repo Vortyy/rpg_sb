@@ -7,6 +7,7 @@
 #include <glad/glad.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 /* var for information about glFunctions */
 #define BUFF_INFO_SIZE 1024
@@ -23,7 +24,6 @@ typedef struct _Renderer {
   int vertex_count;
   
   float *vertices;
-  float *mvp;
 } Renderer;
 
 void logInfo(char *str);
@@ -31,7 +31,7 @@ void logInfo(char *str);
 Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacity);
 void pushVertex(Renderer *renderer, float vertex[VERTEX_SIZE]);
 void setTexture(Renderer *renderer, GLuint textureId);
-void setMvp(Renderer *renderer, float *values);
+void setMatrix(Renderer *renderer, const char *uniName, float *values);
 void flushVertices(Renderer *renderer);
 
 void createTexture(const char *src, GLuint *texture);

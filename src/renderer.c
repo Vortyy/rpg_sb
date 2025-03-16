@@ -62,7 +62,6 @@ Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacit
     .vertex_capacity = vertex_capacity,
     .vertices = (float *) malloc(sizeof(float) * VERTEX_SIZE * vertex_capacity),
     .texture = 0,
-    .mvp = NULL
   };
 }
 
@@ -74,8 +73,6 @@ void flushVertices(Renderer *renderer){
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, renderer->texture);
-
-  glUniformMatrix4fv(glGetUniformLocation(renderer->shaderProgr, "mvp"), 1, GL_FALSE, renderer->mvp);
 
   glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * VERTEX_SIZE * renderer->vertex_count, renderer->vertices);
@@ -103,11 +100,22 @@ void setTexture(Renderer *renderer, GLuint textureId){
   }
 }
 
-void setMvp(Renderer *renderer, float *values){
-  if(renderer->mvp == NULL || memcmp(values, renderer->mvp, sizeof(float) * 16) != 0){
-    flushVertices(renderer);
-    renderer->mvp = values;
+void setMatrix(Renderer *renderer, const char *uniName, float *values){
+  flushVertices(renderer);
+
+  //WARNING wrong uniName will be siltlenty ignored by opengl since loc=-1
+  glUseProgram(renderer->shaderProgr);
+  GLint location = glGetUniformLocation(renderer->shaderProgr, uniName);
+  glUniformMatrix4fv(location, 1, GL_FALSE, values);
+  
+  GLenum err;
+  if((err = glGetError()) != GL_NO_ERROR){
+    bufferInfo[0] = '\0';
+    sprintf(bufferInfo, "error: uniform matrix setting code=0x%x", err);
+    logInfo(bufferInfo);
   }
+    
+  glUseProgram(0);
 }
 
 // --------- texture loading ------------//
