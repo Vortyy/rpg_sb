@@ -1,7 +1,7 @@
 #include "renderer.h"
 
-char bufferInfo[BUFF_INFO_SIZE];
-int success;
+static char bufferInfo[BUFF_INFO_SIZE]; /* used to display OpenGl log */
+static int success;                     /* return status of OpenGl */
 
 GLuint loadShader(GLuint type, const char *src){
   GLuint shaderId = glCreateShader(type);
@@ -32,6 +32,9 @@ GLuint shaderProgram(const char *vertex, const char *frag){
     glGetProgramInfoLog(shaderProgram, 1024, NULL, bufferInfo);
     logInfo(bufferInfo);
   }
+
+  glDeleteShader(vertex_shader);
+  glDeleteShader(frag_shader);
 
   return shaderProgram;
 }
@@ -123,28 +126,27 @@ void setMatrix(Renderer *renderer, const char *uniName, float *values){
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void createTexture(const char *src, GLuint *texture){
-  int width, height, nr_channels;
-  unsigned char *data = stbi_load(src, &width, &height, &nr_channels, 0);
+void createTexture(const char *src, Texture *texture){
+  unsigned char *data = stbi_load(src, &texture->width, &texture->height, &texture->nbChannel, 0);
   if(!data)
     logInfo("error while loading texture");
   else
   {
     bufferInfo[0] = '\0'; //resetting bufferInfo
-    sprintf(bufferInfo, "image loaded : (%d, %d, %d)", width, height, nr_channels);
+    sprintf(bufferInfo, "image loaded : (%d, %d, %d)", texture->width, texture->height, texture->nbChannel);
     logInfo(bufferInfo);
   }
 
-  glGenTextures(1, texture);
+  glGenTextures(1, &texture->textureId);
   
-  glBindTexture(GL_TEXTURE_2D, *texture);
+  glBindTexture(GL_TEXTURE_2D, texture->textureId);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
   glBindTexture(GL_TEXTURE_2D, 0);
   stbi_image_free(data);

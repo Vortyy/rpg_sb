@@ -47,7 +47,7 @@ const char *frag_src =
   "uniform sampler2D img;\n"
   "void main()\n"
   "{\n"
-  "FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
+  "FragColor = texture(img, TexCoord);\n"
   "}\0";
 
 GLFWwindow *window = NULL;
@@ -84,7 +84,7 @@ void drawTriangle(Renderer *renderer){
 }
 
 void drawTriangle2(Renderer *renderer){
-  pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
+   pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){800.0f, 500.0f, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){700.0f, 600.0f, 0.0f, 0.0f, 0.0f});
 }
@@ -136,7 +136,7 @@ int main(){
 
   glfwMakeContextCurrent(window);
 
-  // Load the glad process to link functions
+  /* Load the glad process to link functions */
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
     printf("Failed to initialize GLAD\n");
@@ -145,14 +145,14 @@ int main(){
   
   glViewport(0,0,800,600);
 
-  GLuint wallTexture;
+  Texture wallTexture;
   createTexture("img/wall.jpg", &wallTexture);
 
   float *matrix = genOrthMatrix(0, 800.f, 600.f, 0, -1.0f, 1.0f);
   
   renderer = createRenderer(vertex_src, frag_src, 300);
 
-  setTexture(&renderer, wallTexture);
+  setTexture(&renderer, wallTexture.textureId);
   setMatrix(&renderer, "mvp", matrix);
   
   #ifdef __EMSCRIPTEN__

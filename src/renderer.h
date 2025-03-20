@@ -26,6 +26,11 @@ typedef struct _Renderer {
   float *vertices;
 } Renderer;
 
+typedef struct _Texture {
+  int width, height, nbChannel;
+  GLuint textureId;
+} Texture;
+
 void logInfo(char *str);
 
 Renderer createRenderer(const char *vertex, const char *frag, int vertex_capacity);
@@ -34,6 +39,6 @@ void setTexture(Renderer *renderer, GLuint textureId);
 void setMatrix(Renderer *renderer, const char *uniName, float *values);
 void flushVertices(Renderer *renderer);
 
-void createTexture(const char *src, GLuint *texture);
+void createTexture(const char *src, Texture *texture);
 
 #endif //RENDERER_H
