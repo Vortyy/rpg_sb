@@ -52,7 +52,9 @@ const char *frag_src =
 
 GLFWwindow *window = NULL;
 Renderer renderer;
+Texture slimeText;
 float clear_color[3] = {0.5f, 1.0f, 0.2f};
+float x,y;
 
 #ifdef __EMSCRIPTEN__
 extern void randomize_bg_color();
@@ -77,6 +79,23 @@ void printMatrix(char row, char col, float *values){
   }
 }
 
+void drawSlime(Renderer *renderer, Texture *texture, float x, float y){
+  float sx, sy;
+
+  sx = 16.f/(texture->width);
+  sy = 16.f/(texture->height);
+
+  float size = 16.f;
+
+  pushVertex(renderer, (float[]){x, y, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){x + size, y, 0.0f, 0.2f, 0.0f});
+  pushVertex(renderer, (float[]){x, y + size, 0.0f, 0.0, 1.0f});
+
+  pushVertex(renderer, (float[]){x, y + size, 0.0f, 0.0f, 1.0f});
+  pushVertex(renderer, (float[]){x + size, y, 0.0f, 0.2f, 0.0f});
+  pushVertex(renderer, (float[]){x + size, y + size, 0.f, 0.2f, 1.0f});
+}
+
 void drawTriangle(Renderer *renderer){
   pushVertex(renderer, (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){0.0f, 100.0f, 0.0f, 0.0f, 0.0f});
@@ -84,7 +103,7 @@ void drawTriangle(Renderer *renderer){
 }
 
 void drawTriangle2(Renderer *renderer){
-   pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
+  pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){800.0f, 500.0f, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){700.0f, 600.0f, 0.0f, 0.0f, 0.0f});
 }
@@ -97,6 +116,8 @@ void _loop(){
 
   drawTriangle(&renderer);
   drawTriangle2(&renderer);
+
+  drawSlime(&renderer, &slimeText, x, y); 
   flushVertices(&renderer);
 
   glfwSwapBuffers(window);
@@ -144,15 +165,17 @@ int main(){
   }   
   
   glViewport(0,0,800,600);
-
-  Texture wallTexture;
-  createTexture("img/wall.jpg", &wallTexture);
+  
+  createTexture("img/slime.png", &slimeText); //check path ???
 
   float *matrix = genOrthMatrix(0, 800.f, 600.f, 0, -1.0f, 1.0f);
+
+  x = frand() * 800;
+  y = frand() * 600;
   
   renderer = createRenderer(vertex_src, frag_src, 300);
 
-  setTexture(&renderer, wallTexture.textureId);
+  setTexture(&renderer, slimeText.textureId);
   setMatrix(&renderer, "mvp", matrix);
   
   #ifdef __EMSCRIPTEN__
