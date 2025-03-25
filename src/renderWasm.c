@@ -27,6 +27,10 @@ void logInfo(char *str){
 
 #define frand() ((float) rand() / (float) (RAND_MAX))
 
+typedef struct _slime {
+  float x, y;
+} Slime;
+
 const char *vertex_src =
   "#version 300 es\n"
   "uniform mat4 mvp;\n"
@@ -54,7 +58,8 @@ GLFWwindow *window = NULL;
 Renderer renderer;
 Texture slimeText;
 float clear_color[3] = {0.5f, 1.0f, 0.2f};
-float x,y;
+Slime mob[20];
+int currentMob = 0;
 
 #ifdef __EMSCRIPTEN__
 extern void randomize_bg_color();
@@ -85,7 +90,7 @@ void drawSlime(Renderer *renderer, Texture *texture, float x, float y){
   sx = 16.f/(texture->width);
   sy = 16.f/(texture->height);
 
-  float size = 16.f;
+  float size = 64.f;
 
   pushVertex(renderer, (float[]){x, y, 0.0f, 0.0f, 0.0f});
   pushVertex(renderer, (float[]){x + size, y, 0.0f, 0.2f, 0.0f});
@@ -114,10 +119,12 @@ void _loop(){
 
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); /* wireframe mode */
 
-  drawTriangle(&renderer);
-  drawTriangle2(&renderer);
+  for(int i = 0; i < currentMob; i++)
+    drawSlime(&renderer, &slimeText, mob[i].x, mob[i].y);
 
-  drawSlime(&renderer, &slimeText, x, y); 
+  //drawTriangle(&renderer);
+  //drawTriangle2(&renderer);
+
   flushVertices(&renderer);
 
   glfwSwapBuffers(window);
@@ -145,6 +152,22 @@ float * genOrthMatrix(float left, float right, float bottom, float top, float zn
   return m;
 }
 
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods){
+  if(key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+    if(currentMob < 19){
+      mob[currentMob].x = frand() * 800;
+      mob[currentMob].y = frand() * 600;
+      currentMob++;
+    }
+      
+
+  if(key == GLFW_KEY_A && action == GLFW_PRESS)
+    if(currentMob > 0)
+      currentMob--;
+
+  printf("currentMob : %d\n", currentMob);
+}
+
 int main(){
   srand(0);
 
@@ -170,13 +193,12 @@ int main(){
 
   float *matrix = genOrthMatrix(0, 800.f, 600.f, 0, -1.0f, 1.0f);
 
-  x = frand() * 800;
-  y = frand() * 600;
-  
   renderer = createRenderer(vertex_src, frag_src, 300);
 
   setTexture(&renderer, slimeText.textureId);
   setMatrix(&renderer, "mvp", matrix);
+
+  glfwSetKeyCallback(window, keyCallback);
   
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(_loop, -1, 1);
