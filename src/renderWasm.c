@@ -29,6 +29,7 @@ void logInfo(char *str){
 
 typedef struct _slime {
   float x, y;
+  int frame;
 } Slime;
 
 const char *vertex_src =
@@ -87,8 +88,8 @@ void printMatrix(char row, char col, float *values){
 void drawSlime(Renderer *renderer, Texture *texture, float x, float y){
   float sx, sy;
 
-  sx = 16.f/(texture->width);
-  sy = 16.f/(texture->height);
+  sx = 17.f/(texture->width);
+  sy = 17.f/(texture->height);
 
   float size = 64.f;
 
@@ -99,18 +100,6 @@ void drawSlime(Renderer *renderer, Texture *texture, float x, float y){
   pushVertex(renderer, (float[]){x, y + size, 0.0f, 0.0f, 1.0f});
   pushVertex(renderer, (float[]){x + size, y, 0.0f, 0.2f, 0.0f});
   pushVertex(renderer, (float[]){x + size, y + size, 0.f, 0.2f, 1.0f});
-}
-
-void drawTriangle(Renderer *renderer){
-  pushVertex(renderer, (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
-  pushVertex(renderer, (float[]){0.0f, 100.0f, 0.0f, 0.0f, 0.0f});
-  pushVertex(renderer, (float[]){100.0f, 0.0f, 0.0f, 0.0f, 0.0f});
-}
-
-void drawTriangle2(Renderer *renderer){
-  pushVertex(renderer, (float[]){800.0f, 600.0f, 0.0f, 0.0f, 0.0f});
-  pushVertex(renderer, (float[]){800.0f, 500.0f, 0.0f, 0.0f, 0.0f});
-  pushVertex(renderer, (float[]){700.0f, 600.0f, 0.0f, 0.0f, 0.0f});
 }
 
 void _loop(){
@@ -165,7 +154,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     if(currentMob > 0)
       currentMob--;
 
-  printf("currentMob : %d\n", currentMob);
+  printf("currentMob : %d && (%d, %d)\n", currentMob, key, action);
 }
 
 int main(){
@@ -174,7 +163,7 @@ int main(){
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   window = glfwCreateWindow(800, 600, "test WasmGL", NULL, NULL);
 
@@ -188,6 +177,9 @@ int main(){
   }   
   
   glViewport(0,0,800,600);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   
   createTexture("img/slime.png", &slimeText); //check path ???
 
